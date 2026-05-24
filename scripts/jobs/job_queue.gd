@@ -64,6 +64,24 @@ func get_active_job_for(pawn: Pawn) -> JobInstance:
 	return null
 
 
+func has_active_job_for_designation(designation: Designation) -> bool:
+	return _find_job_for_designation(_active_jobs, designation) != null
+
+
+func remove_queued_jobs_for_designation(designation: Designation) -> int:
+	if designation == null:
+		return 0
+
+	var removed_count := 0
+	for index in range(_queued_jobs.size() - 1, -1, -1):
+		var job := _queued_jobs[index]
+		if job.source_designation == designation:
+			_queued_jobs.remove_at(index)
+			removed_count += 1
+
+	return removed_count
+
+
 func get_debug_snapshot() -> Dictionary:
 	return {
 		"queued_count": _queued_jobs.size(),
@@ -80,3 +98,14 @@ func _job_debug_lines(jobs: Array[JobInstance]) -> PackedStringArray:
 			lines.append(job.debug_summary())
 
 	return lines
+
+
+func _find_job_for_designation(jobs: Array[JobInstance], designation: Designation) -> JobInstance:
+	if designation == null:
+		return null
+
+	for job in jobs:
+		if job != null and job.source_designation == designation:
+			return job
+
+	return null

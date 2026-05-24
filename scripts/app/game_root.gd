@@ -141,8 +141,21 @@ func _handle_harvest_command(target_cell: Vector2i) -> void:
 		return
 
 
-func _handle_cancel_command(_target_cell: Vector2i) -> void:
-	_set_failure_status("Nothing to cancel")
+func _handle_cancel_command(target_cell: Vector2i) -> void:
+	var designation := designation_system.get_designation_at(target_cell)
+	if designation == null:
+		_set_failure_status("Nothing to cancel")
+		return
+
+	if job_queue.has_active_job_for_designation(designation):
+		_set_failure_status("Active job cannot be cancelled")
+		return
+
+	job_queue.remove_queued_jobs_for_designation(designation)
+	designation_system.remove_designation(target_cell)
+	_clear_last_failure()
+	_set_status("Cancelled pending work")
+	_update_debug_inspector()
 
 
 func _queue_harvest_job_for_designation(designation: Designation) -> bool:
