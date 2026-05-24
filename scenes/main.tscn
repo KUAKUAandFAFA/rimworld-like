@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://b66whayewbqw1"]
+[gd_scene load_steps=15 format=3 uid="uid://b66whayewbqw1"]
 
 [ext_resource type="Script" path="res://scripts/app/game_root.gd" id="1_game_root"]
 [ext_resource type="PackedScene" path="res://scenes/world/world_grid.tscn" id="2_world_grid"]
@@ -13,11 +13,15 @@
 [ext_resource type="Script" path="res://scripts/app/command_mode_model.gd" id="11_command_mode"]
 [ext_resource type="Script" path="res://scripts/designations/designation_system.gd" id="12_designation_system"]
 [ext_resource type="Script" path="res://scripts/items/world_item_stack_system.gd" id="13_item_stacks"]
+[ext_resource type="Script" path="res://scripts/items/stockpile_zone_system.gd" id="14_stockpile_zones"]
 
 [node name="Main" type="Node2D" unique_id=1362121018]
 script = ExtResource("1_game_root")
 
 [node name="WorldGrid" parent="." unique_id=468506198 instance=ExtResource("2_world_grid")]
+
+[node name="StockpileZones" type="Node2D" parent="."]
+script = ExtResource("14_stockpile_zones")
 
 [node name="WorldItemStacks" type="Node2D" parent="."]
 script = ExtResource("13_item_stacks")

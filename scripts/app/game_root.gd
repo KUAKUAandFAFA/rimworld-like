@@ -10,6 +10,7 @@ const WORK_LOOP_WAITING := "Waiting"
 @export var camera_speed := 520.0
 
 @onready var grid: WorldGrid = $WorldGrid
+@onready var stockpile_zones: StockpileZoneSystem = $StockpileZones
 @onready var designation_system: DesignationSystem = $DesignationSystem
 @onready var pawn: Pawn = $Pawn
 @onready var definition_registry: DefinitionRegistry = $DefinitionRegistry
@@ -38,6 +39,7 @@ func _ready() -> void:
 		definition_registry.load_all()
 	grid.configure_definitions(definition_registry)
 	grid.generate_map()
+	stockpile_zones.configure(grid.cell_size)
 	item_stacks.configure(grid.cell_size)
 	designation_system.configure(grid)
 	input_controller.configure(grid)
@@ -92,6 +94,8 @@ func _connect_signals() -> void:
 		stockpile.stockpile_changed.connect(_on_stockpile_changed)
 	if not item_stacks.stacks_changed.is_connected(_on_item_stacks_changed):
 		item_stacks.stacks_changed.connect(_on_item_stacks_changed)
+	if not stockpile_zones.zones_changed.is_connected(_on_stockpile_zones_changed):
+		stockpile_zones.zones_changed.connect(_on_stockpile_zones_changed)
 
 
 func _register_initial_stockpile_items() -> void:
@@ -101,6 +105,8 @@ func _register_initial_stockpile_items() -> void:
 	stockpile.register_item(wood_def)
 	item_stacks.register_item(food_def)
 	item_stacks.register_item(wood_def)
+	stockpile_zones.register_item(food_def)
+	stockpile_zones.register_item(wood_def)
 
 
 func _spawn_pawn() -> void:
@@ -121,6 +127,8 @@ func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
 			_handle_harvest_command(target_cell)
 		CommandModeModel.MODE_CANCEL:
 			_handle_cancel_command(target_cell)
+		CommandModeModel.MODE_STOCKPILE:
+			_handle_stockpile_command(target_cell)
 		_:
 			_set_failure_status(FailureFeedback.UNKNOWN_COMMAND_MODE, FailureFeedback.SOURCE_COMMAND)
 
@@ -174,6 +182,19 @@ func _handle_cancel_command(target_cell: Vector2i) -> void:
 	_clear_last_failure()
 	_set_status("Cancelled pending work")
 	_start_next_job_if_idle()
+
+
+func _handle_stockpile_command(target_cell: Vector2i) -> void:
+	if not grid.is_cell_walkable(target_cell):
+		_set_failure_status(FailureFeedback.STOCKPILE_CELL_NOT_WALKABLE, FailureFeedback.SOURCE_STOCKPILE_COMMAND)
+		return
+
+	var added := stockpile_zones.toggle_default_zone_cell(target_cell)
+	_clear_last_failure()
+	if added:
+		_set_status("Stockpile cell added")
+	else:
+		_set_status("Stockpile cell removed")
 
 
 func _queue_harvest_job_for_designation(designation: Designation) -> bool:
@@ -272,6 +293,10 @@ func _on_item_stacks_changed(_snapshot: Dictionary) -> void:
 	_update_debug_inspector()
 
 
+func _on_stockpile_zones_changed(_snapshot: Dictionary) -> void:
+	_update_debug_inspector()
+
+
 func _on_designations_changed() -> void:
 	_update_debug_inspector()
 
@@ -357,6 +382,7 @@ func _update_debug_inspector() -> void:
 		"command_mode": command_mode_model.get_mode_label(),
 		"selected_cell": _selected_cell_debug_snapshot(),
 		"designations": designation_system.get_debug_snapshot(),
+		"stockpile_zones": stockpile_zones.get_debug_snapshot(),
 		"item_stacks": item_stacks.get_debug_snapshot(),
 		"pawn": pawn.get_debug_snapshot(),
 		"jobs": job_queue.get_debug_snapshot(),
@@ -383,6 +409,7 @@ func _selected_cell_debug_snapshot() -> Dictionary:
 		"in_bounds": grid.is_cell_in_bounds(_selected_cell),
 		"walkable": grid.is_cell_walkable(_selected_cell),
 		"resource": _resource_debug_text(resource),
+		"stockpile_zone": stockpile_zones.get_cell_debug_text(_selected_cell),
 		"item_stack": item_stacks.get_cell_debug_text(_selected_cell),
 		"designation": _designation_debug_text(designation),
 	}

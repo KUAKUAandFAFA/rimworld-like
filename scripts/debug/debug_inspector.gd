@@ -2,7 +2,7 @@ class_name DebugInspector
 extends CanvasLayer
 
 const PANEL_WIDTH := 360.0
-const PANEL_HEIGHT := 430.0
+const PANEL_HEIGHT := 490.0
 const PANEL_MARGIN := 12.0
 
 @export var visible_by_default := true
@@ -99,6 +99,7 @@ func _build_lines() -> PackedStringArray:
 	_append_work_loop(lines)
 	_append_selected_cell(lines)
 	_append_designations(lines)
+	_append_stockpile_zones(lines)
 	_append_item_stacks(lines)
 	_append_pawn(lines)
 	_append_jobs(lines)
@@ -125,6 +126,7 @@ func _append_selected_cell(lines: PackedStringArray) -> void:
 		_yes_no(bool(selected.get("walkable", false))),
 	])
 	lines.append("  resource: %s" % String(selected.get("resource", "None")))
+	lines.append("  stockpile: %s" % String(selected.get("stockpile_zone", "None")))
 	lines.append("  item stack: %s" % String(selected.get("item_stack", "None")))
 	lines.append("  designation: %s" % String(selected.get("designation", "None")))
 
@@ -134,6 +136,13 @@ func _append_designations(lines: PackedStringArray) -> void:
 	lines.append("")
 	lines.append("Designations: %d" % int(designations.get("count", 0)))
 	_append_named_lines(lines, "  mark", designations.get("designations", PackedStringArray()))
+
+
+func _append_stockpile_zones(lines: PackedStringArray) -> void:
+	var stockpile_zones: Dictionary = _snapshot.get("stockpile_zones", {})
+	lines.append("")
+	lines.append("Stockpile zones: %d" % int(stockpile_zones.get("count", 0)))
+	_append_named_lines(lines, "  zone", stockpile_zones.get("zones", PackedStringArray()))
 
 
 func _append_item_stacks(lines: PackedStringArray) -> void:

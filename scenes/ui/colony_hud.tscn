@@ -51,3 +51,10 @@ layout_mode = 2
 focus_mode = 0
 toggle_mode = true
 text = "Cancel"
+
+[node name="StockpileButton" type="Button" parent="Panel/Margin/VBox/CommandBar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "Stockpile"

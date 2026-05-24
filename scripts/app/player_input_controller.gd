@@ -9,6 +9,7 @@ signal camera_zoom_requested(amount: float)
 const ACTION_COMMAND_MOVE := "command_mode_move"
 const ACTION_COMMAND_HARVEST := "command_mode_harvest"
 const ACTION_COMMAND_CANCEL := "command_mode_cancel"
+const ACTION_COMMAND_STOCKPILE := "command_mode_stockpile"
 
 var grid: WorldGrid
 
@@ -17,6 +18,7 @@ func _ready() -> void:
 	_ensure_key_action(ACTION_COMMAND_MOVE, KEY_1)
 	_ensure_key_action(ACTION_COMMAND_HARVEST, KEY_2)
 	_ensure_key_action(ACTION_COMMAND_CANCEL, KEY_3)
+	_ensure_key_action(ACTION_COMMAND_STOCKPILE, KEY_4)
 
 
 func configure(new_grid: WorldGrid) -> void:
@@ -50,6 +52,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(ACTION_COMMAND_CANCEL):
 		command_mode_requested.emit(CommandModeModel.MODE_CANCEL)
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(ACTION_COMMAND_STOCKPILE):
+		command_mode_requested.emit(CommandModeModel.MODE_STOCKPILE)
 		get_viewport().set_input_as_handled()
 		return
 

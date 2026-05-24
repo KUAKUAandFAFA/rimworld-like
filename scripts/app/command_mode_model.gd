@@ -6,20 +6,23 @@ signal mode_changed(mode: String, label: String)
 const MODE_MOVE := "move"
 const MODE_HARVEST := "harvest"
 const MODE_CANCEL := "cancel"
+const MODE_STOCKPILE := "stockpile"
 
 const MODES := [
 	MODE_MOVE,
 	MODE_HARVEST,
 	MODE_CANCEL,
+	MODE_STOCKPILE,
 ]
 
 const MODE_LABELS := {
 	MODE_MOVE: "Move",
 	MODE_HARVEST: "Harvest",
 	MODE_CANCEL: "Cancel",
+	MODE_STOCKPILE: "Stockpile",
 }
 
-@export_enum("move", "harvest", "cancel") var default_mode := MODE_MOVE
+@export_enum("move", "harvest", "cancel", "stockpile") var default_mode := MODE_MOVE
 
 var _active_mode := MODE_MOVE
 

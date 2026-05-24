@@ -7,6 +7,7 @@ signal command_mode_requested(mode: String)
 @onready var _move_button: Button = %MoveButton
 @onready var _harvest_button: Button = %HarvestButton
 @onready var _cancel_button: Button = %CancelButton
+@onready var _stockpile_button: Button = %StockpileButton
 
 var _status_text := "Idle"
 var _command_mode_label := "Move"
@@ -20,6 +21,7 @@ func _ready() -> void:
 		CommandModeModel.MODE_MOVE: _move_button,
 		CommandModeModel.MODE_HARVEST: _harvest_button,
 		CommandModeModel.MODE_CANCEL: _cancel_button,
+		CommandModeModel.MODE_STOCKPILE: _stockpile_button,
 	}
 	_connect_command_buttons()
 	_refresh()
@@ -78,6 +80,7 @@ func _connect_command_buttons() -> void:
 	_connect_mode_button(_move_button, CommandModeModel.MODE_MOVE)
 	_connect_mode_button(_harvest_button, CommandModeModel.MODE_HARVEST)
 	_connect_mode_button(_cancel_button, CommandModeModel.MODE_CANCEL)
+	_connect_mode_button(_stockpile_button, CommandModeModel.MODE_STOCKPILE)
 
 
 func _connect_mode_button(button: Button, mode: String) -> void:
