@@ -3,6 +3,10 @@
 *.tmp
 *.translation
 
+# Local planning/docs
+AGENTS.md
+docs/
+
 # Exported builds
 export/
 build/
