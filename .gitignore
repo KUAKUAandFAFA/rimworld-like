@@ -1,0 +1,15 @@
+# Godot 4
+.godot/
+*.tmp
+*.translation
+
+# Exported builds
+export/
+build/
+dist/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
