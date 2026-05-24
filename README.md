@@ -14,3 +14,9 @@ A small Godot prototype exploring RimWorld-like colony simulation systems.
 
 - Godot 4.6
 - GDScript
+
+## Prototype Controls
+
+- Left click: move the pawn to a walkable cell
+- WASD / arrow keys: pan camera
+- Mouse wheel: zoom camera
