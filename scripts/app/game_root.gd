@@ -9,6 +9,7 @@ const HARVEST_JOB_ID := "harvest"
 @onready var grid: WorldGrid = $WorldGrid
 @onready var pawn: Pawn = $Pawn
 @onready var definition_registry: DefinitionRegistry = $DefinitionRegistry
+@onready var command_mode_model: CommandModeModel = $CommandModeModel
 @onready var job_queue: JobQueue = $JobQueue
 @onready var stockpile: StockpileSystem = $StockpileSystem
 @onready var harvest_job_driver: HarvestJobDriver = $HarvestJobDriver
@@ -33,6 +34,7 @@ func _ready() -> void:
 	harvest_job_driver.configure(grid, pawn, stockpile, job_queue)
 
 	_connect_signals()
+	_on_command_mode_changed(command_mode_model.get_mode(), command_mode_model.get_mode_label())
 	_register_initial_stockpile_items()
 	_spawn_pawn()
 	_update_hud()
@@ -56,6 +58,12 @@ func _connect_signals() -> void:
 		input_controller.camera_pan_requested.connect(_on_camera_pan_requested)
 	if not input_controller.camera_zoom_requested.is_connected(_on_camera_zoom_requested):
 		input_controller.camera_zoom_requested.connect(_on_camera_zoom_requested)
+	if not input_controller.command_mode_requested.is_connected(_on_command_mode_requested):
+		input_controller.command_mode_requested.connect(_on_command_mode_requested)
+	if not hud.command_mode_requested.is_connected(_on_command_mode_requested):
+		hud.command_mode_requested.connect(_on_command_mode_requested)
+	if not command_mode_model.mode_changed.is_connected(_on_command_mode_changed):
+		command_mode_model.mode_changed.connect(_on_command_mode_changed)
 	if not pawn.arrived.is_connected(_on_pawn_arrived):
 		pawn.arrived.connect(_on_pawn_arrived)
 	if not harvest_job_driver.status_changed.is_connected(_set_status):
@@ -84,12 +92,20 @@ func _spawn_pawn() -> void:
 func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
 	_select_cell(target_cell)
 
+	match command_mode_model.get_mode():
+		CommandModeModel.MODE_MOVE:
+			_handle_move_command(target_cell)
+		CommandModeModel.MODE_HARVEST:
+			_handle_harvest_command(target_cell)
+		CommandModeModel.MODE_CANCEL:
+			_handle_cancel_command(target_cell)
+		_:
+			_set_failure_status("Unknown command mode")
+
+
+func _handle_move_command(target_cell: Vector2i) -> void:
 	if harvest_job_driver.is_busy():
 		_set_failure_status("Pawn busy")
-		return
-
-	if grid.has_resource(target_cell):
-		_queue_harvest_job(target_cell)
 		return
 
 	if not grid.is_cell_walkable(target_cell):
@@ -97,6 +113,22 @@ func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
 		return
 
 	_move_pawn_directly(target_cell)
+
+
+func _handle_harvest_command(target_cell: Vector2i) -> void:
+	if harvest_job_driver.is_busy():
+		_set_failure_status("Pawn busy")
+		return
+
+	if not grid.has_resource(target_cell):
+		_set_failure_status("No resource")
+		return
+
+	_queue_harvest_job(target_cell)
+
+
+func _handle_cancel_command(_target_cell: Vector2i) -> void:
+	_set_failure_status("Nothing to cancel")
 
 
 func _queue_harvest_job(resource_cell: Vector2i) -> void:
@@ -170,6 +202,17 @@ func _on_camera_zoom_requested(amount: float) -> void:
 	camera.zoom = Vector2.ONE * clampf(camera.zoom.x * amount, 0.55, 2.5)
 
 
+func _on_command_mode_requested(mode: String) -> void:
+	command_mode_model.set_mode(mode)
+
+
+func _on_command_mode_changed(mode: String, label: String) -> void:
+	if hud != null:
+		hud.set_command_mode(mode, label)
+
+	_update_debug_inspector()
+
+
 func _set_status(text: String) -> void:
 	_status_text = text
 	pawn.status_text = text
@@ -201,6 +244,7 @@ func _update_debug_inspector() -> void:
 	debug_inspector.set_snapshot({
 		"status": _status_text,
 		"last_failure": _last_failure_reason,
+		"command_mode": command_mode_model.get_mode_label(),
 		"selected_cell": _selected_cell_debug_snapshot(),
 		"pawn": pawn.get_debug_snapshot(),
 		"jobs": job_queue.get_debug_snapshot(),

@@ -8,7 +8,7 @@ layer = 1
 
 [node name="Panel" type="PanelContainer" parent="."]
 position = Vector2(14, 14)
-custom_minimum_size = Vector2(280, 96)
+custom_minimum_size = Vector2(320, 132)
 
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
@@ -17,7 +17,37 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 10
 
-[node name="SummaryLabel" type="Label" parent="Panel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SummaryLabel" type="Label" parent="Panel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
+
+[node name="CommandBar" type="HBoxContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MoveButton" type="Button" parent="Panel/Margin/VBox/CommandBar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+button_pressed = true
+text = "Move"
+
+[node name="HarvestButton" type="Button" parent="Panel/Margin/VBox/CommandBar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "Harvest"
+
+[node name="CancelButton" type="Button" parent="Panel/Margin/VBox/CommandBar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "Cancel"

@@ -92,6 +92,7 @@ func _refresh() -> void:
 func _build_lines() -> PackedStringArray:
 	var lines := PackedStringArray()
 	lines.append("Debug Inspector")
+	lines.append("Mode: %s" % String(_snapshot.get("command_mode", "Unknown")))
 	lines.append("Status: %s" % String(_snapshot.get("status", "Unknown")))
 	lines.append("Last failure: %s" % String(_snapshot.get("last_failure", "None")))
 	lines.append("")
