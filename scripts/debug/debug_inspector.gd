@@ -2,7 +2,7 @@ class_name DebugInspector
 extends CanvasLayer
 
 const PANEL_WIDTH := 360.0
-const PANEL_HEIGHT := 340.0
+const PANEL_HEIGHT := 370.0
 const PANEL_MARGIN := 12.0
 
 @export var visible_by_default := true
@@ -96,12 +96,19 @@ func _build_lines() -> PackedStringArray:
 	lines.append("Status: %s" % String(_snapshot.get("status", "Unknown")))
 	lines.append("Last failure: %s" % String(_snapshot.get("last_failure", "None")))
 	lines.append("Failure source: %s" % String(_snapshot.get("last_failure_source", "None")))
-	lines.append("")
+	_append_work_loop(lines)
 	_append_selected_cell(lines)
 	_append_designations(lines)
 	_append_pawn(lines)
 	_append_jobs(lines)
 	return lines
+
+
+func _append_work_loop(lines: PackedStringArray) -> void:
+	var work_loop: Dictionary = _snapshot.get("work_loop", {})
+	lines.append("Work loop: %s" % String(work_loop.get("state", "Unknown")))
+	lines.append("  detail: %s" % String(work_loop.get("detail", "None")))
+	lines.append("")
 
 
 func _append_selected_cell(lines: PackedStringArray) -> void:

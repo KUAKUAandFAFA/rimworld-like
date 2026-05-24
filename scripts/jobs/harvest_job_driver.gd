@@ -80,11 +80,11 @@ func _deliver_resource() -> void:
 	active_job = null
 	_phase = ""
 
+	_set_status("Delivered")
 	if job_queue != null:
 		job_queue.complete_job(finished_job)
 
 	job_finished.emit(finished_job)
-	_set_status("Delivered")
 
 
 func _move_to_cell(cell: Vector2i, status_text: String) -> void:

@@ -3,6 +3,9 @@ extends Node2D
 
 const INVALID_CELL := Vector2i(-1, -1)
 const HARVEST_JOB_ID := "harvest"
+const WORK_LOOP_IDLE := "Idle"
+const WORK_LOOP_RUNNING := "Running"
+const WORK_LOOP_WAITING := "Waiting"
 
 @export var camera_speed := 520.0
 
@@ -23,6 +26,8 @@ var _selected_cell := INVALID_CELL
 var _status_text := "Idle"
 var _last_failure_reason := "None"
 var _last_failure_source := "None"
+var _work_loop_state := WORK_LOOP_IDLE
+var _work_loop_detail := "No queued jobs"
 var _debug_refresh_elapsed := 0.0
 
 
@@ -73,6 +78,10 @@ func _connect_signals() -> void:
 		pawn.arrived.connect(_on_pawn_arrived)
 	if not harvest_job_driver.status_changed.is_connected(_set_status):
 		harvest_job_driver.status_changed.connect(_set_status)
+	if not job_queue.job_added.is_connected(_on_job_added):
+		job_queue.job_added.connect(_on_job_added)
+	if not job_queue.job_claimed.is_connected(_on_job_claimed):
+		job_queue.job_claimed.connect(_on_job_claimed)
 	if not job_queue.job_completed.is_connected(_on_job_completed):
 		job_queue.job_completed.connect(_on_job_completed)
 	if not job_queue.job_failed.is_connected(_on_job_failed):
@@ -156,7 +165,7 @@ func _handle_cancel_command(target_cell: Vector2i) -> void:
 	designation_system.remove_designation(target_cell)
 	_clear_last_failure()
 	_set_status("Cancelled pending work")
-	_update_debug_inspector()
+	_start_next_job_if_idle()
 
 
 func _queue_harvest_job_for_designation(designation: Designation) -> bool:
@@ -179,24 +188,34 @@ func _queue_harvest_job_for_designation(designation: Designation) -> bool:
 	var resource_amount := maxi(1, int(resource.get("amount", 1)))
 	var job := JobInstance.new(harvest_job_def, resource_cell, item_def, resource_amount)
 	job.source_designation = designation
-	job_queue.add_job(job)
 	_clear_last_failure()
-	_start_next_job_if_idle()
+	job_queue.add_job(job)
 	return true
 
 
-func _start_next_job_if_idle() -> void:
-	if harvest_job_driver.is_busy() or pawn.is_moving():
-		return
+func _start_next_job_if_idle(set_idle_status: bool = false) -> bool:
+	if harvest_job_driver.is_busy():
+		_set_work_loop_state(WORK_LOOP_RUNNING, _current_job_detail())
+		return false
+
+	if pawn.is_moving():
+		_set_work_loop_state(WORK_LOOP_WAITING, "Pawn is moving")
+		return false
 
 	var job := job_queue.claim_next_job(pawn)
 	if job == null:
-		return
+		_set_work_loop_state(WORK_LOOP_IDLE, "No queued jobs")
+		if set_idle_status:
+			_set_status("Idle")
+		return false
 
 	if harvest_job_driver.can_run(job):
+		_set_work_loop_state(WORK_LOOP_RUNNING, job.debug_summary())
 		harvest_job_driver.start_job(job)
 	else:
 		job_queue.fail_job(job, FailureFeedback.UNSUPPORTED_JOB)
+
+	return true
 
 
 func _move_pawn_directly(target_cell: Vector2i) -> void:
@@ -214,12 +233,21 @@ func _on_pawn_arrived(_cell: Vector2i) -> void:
 	if not harvest_job_driver.is_busy() and _status_text == "Moving":
 		_set_status("Idle")
 
+	_start_next_job_if_idle(true)
+
+
+func _on_job_added(_job: JobInstance) -> void:
 	_start_next_job_if_idle()
+
+
+func _on_job_claimed(job: JobInstance, _assigned_pawn: Pawn) -> void:
+	if job != null:
+		_set_work_loop_state(WORK_LOOP_RUNNING, job.debug_summary())
 
 
 func _on_job_completed(job: JobInstance) -> void:
 	_clear_completed_job_designation(job)
-	_start_next_job_if_idle()
+	_start_next_job_if_idle(true)
 
 
 func _on_job_failed(_job: JobInstance, reason: String) -> void:
@@ -268,6 +296,20 @@ func _set_status(text: String) -> void:
 	_update_debug_inspector()
 
 
+func _set_work_loop_state(state: String, detail: String) -> void:
+	_work_loop_state = state
+	_work_loop_detail = detail
+	_update_debug_inspector()
+
+
+func _current_job_detail() -> String:
+	var active_job := job_queue.get_active_job_for(pawn)
+	if active_job != null:
+		return active_job.debug_summary()
+
+	return "Driver busy"
+
+
 func _set_failure_status(text: String, source: String = FailureFeedback.SOURCE_SYSTEM) -> void:
 	_last_failure_reason = text
 	_last_failure_source = source
@@ -295,6 +337,10 @@ func _update_debug_inspector() -> void:
 		"status": _status_text,
 		"last_failure": _last_failure_reason,
 		"last_failure_source": _last_failure_source,
+		"work_loop": {
+			"state": _work_loop_state,
+			"detail": _work_loop_detail,
+		},
 		"command_mode": command_mode_model.get_mode_label(),
 		"selected_cell": _selected_cell_debug_snapshot(),
 		"designations": designation_system.get_debug_snapshot(),
