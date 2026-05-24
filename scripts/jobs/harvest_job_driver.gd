@@ -8,8 +8,8 @@ const PHASE_TO_STOCKPILE := "to_stockpile"
 var _phase := ""
 
 
-func configure(new_grid: WorldGrid, new_pawn: Pawn, new_stockpile: StockpileSystem, new_job_queue: JobQueue) -> void:
-	super.configure(new_grid, new_pawn, new_stockpile, new_job_queue)
+func configure(new_grid: WorldGrid, new_pawn: Pawn, new_stockpile: StockpileSystem, new_job_queue: JobQueue, new_item_stacks: WorldItemStackSystem = null) -> void:
+	super.configure(new_grid, new_pawn, new_stockpile, new_job_queue, new_item_stacks)
 
 	if pawn != null and not pawn.arrived.is_connected(_on_pawn_arrived):
 		pawn.arrived.connect(_on_pawn_arrived)
@@ -72,7 +72,10 @@ func _collect_resource(_cell: Vector2i) -> void:
 
 func _deliver_resource() -> void:
 	if pawn.carrying_item != null and pawn.carrying_amount > 0:
-		stockpile.add_item(pawn.carrying_item, pawn.carrying_amount)
+		if item_stacks != null:
+			item_stacks.add_or_merge_stack(pawn.carrying_item, pawn.carrying_amount, pawn.current_cell)
+		elif stockpile != null:
+			stockpile.add_item(pawn.carrying_item, pawn.carrying_amount)
 
 	pawn.clear_carrying()
 

@@ -8,15 +8,17 @@ signal job_failed(job: JobInstance, reason: String)
 var grid: WorldGrid
 var pawn: Pawn
 var stockpile: StockpileSystem
+var item_stacks: WorldItemStackSystem
 var job_queue: JobQueue
 var active_job: JobInstance
 
 
-func configure(new_grid: WorldGrid, new_pawn: Pawn, new_stockpile: StockpileSystem, new_job_queue: JobQueue) -> void:
+func configure(new_grid: WorldGrid, new_pawn: Pawn, new_stockpile: StockpileSystem, new_job_queue: JobQueue, new_item_stacks: WorldItemStackSystem = null) -> void:
 	grid = new_grid
 	pawn = new_pawn
 	stockpile = new_stockpile
 	job_queue = new_job_queue
+	item_stacks = new_item_stacks
 
 
 func is_busy() -> bool:

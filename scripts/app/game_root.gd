@@ -16,6 +16,7 @@ const WORK_LOOP_WAITING := "Waiting"
 @onready var command_mode_model: CommandModeModel = $CommandModeModel
 @onready var job_queue: JobQueue = $JobQueue
 @onready var stockpile: StockpileSystem = $StockpileSystem
+@onready var item_stacks: WorldItemStackSystem = $WorldItemStacks
 @onready var harvest_job_driver: HarvestJobDriver = $HarvestJobDriver
 @onready var input_controller: PlayerInputController = $InputController
 @onready var camera: Camera2D = $Camera2D
@@ -37,9 +38,10 @@ func _ready() -> void:
 		definition_registry.load_all()
 	grid.configure_definitions(definition_registry)
 	grid.generate_map()
+	item_stacks.configure(grid.cell_size)
 	designation_system.configure(grid)
 	input_controller.configure(grid)
-	harvest_job_driver.configure(grid, pawn, stockpile, job_queue)
+	harvest_job_driver.configure(grid, pawn, stockpile, job_queue, item_stacks)
 
 	_connect_signals()
 	_on_command_mode_changed(command_mode_model.get_mode(), command_mode_model.get_mode_label())
@@ -88,11 +90,17 @@ func _connect_signals() -> void:
 		job_queue.job_failed.connect(_on_job_failed)
 	if not stockpile.stockpile_changed.is_connected(_on_stockpile_changed):
 		stockpile.stockpile_changed.connect(_on_stockpile_changed)
+	if not item_stacks.stacks_changed.is_connected(_on_item_stacks_changed):
+		item_stacks.stacks_changed.connect(_on_item_stacks_changed)
 
 
 func _register_initial_stockpile_items() -> void:
-	stockpile.register_item(definition_registry.get_item(WorldGrid.RESOURCE_FOOD))
-	stockpile.register_item(definition_registry.get_item(WorldGrid.RESOURCE_WOOD))
+	var food_def := definition_registry.get_item(WorldGrid.RESOURCE_FOOD)
+	var wood_def := definition_registry.get_item(WorldGrid.RESOURCE_WOOD)
+	stockpile.register_item(food_def)
+	stockpile.register_item(wood_def)
+	item_stacks.register_item(food_def)
+	item_stacks.register_item(wood_def)
 
 
 func _spawn_pawn() -> void:
@@ -259,6 +267,11 @@ func _on_stockpile_changed(_snapshot: Dictionary) -> void:
 	_update_hud()
 
 
+func _on_item_stacks_changed(_snapshot: Dictionary) -> void:
+	_update_hud()
+	_update_debug_inspector()
+
+
 func _on_designations_changed() -> void:
 	_update_debug_inspector()
 
@@ -326,7 +339,7 @@ func _update_hud() -> void:
 		return
 
 	hud.set_status(_status_text)
-	hud.set_stockpile_snapshot(stockpile.get_snapshot())
+	hud.set_stockpile_snapshot(item_stacks.get_inventory_snapshot())
 
 
 func _update_debug_inspector() -> void:
@@ -344,6 +357,7 @@ func _update_debug_inspector() -> void:
 		"command_mode": command_mode_model.get_mode_label(),
 		"selected_cell": _selected_cell_debug_snapshot(),
 		"designations": designation_system.get_debug_snapshot(),
+		"item_stacks": item_stacks.get_debug_snapshot(),
 		"pawn": pawn.get_debug_snapshot(),
 		"jobs": job_queue.get_debug_snapshot(),
 	})
@@ -369,6 +383,7 @@ func _selected_cell_debug_snapshot() -> Dictionary:
 		"in_bounds": grid.is_cell_in_bounds(_selected_cell),
 		"walkable": grid.is_cell_walkable(_selected_cell),
 		"resource": _resource_debug_text(resource),
+		"item_stack": item_stacks.get_cell_debug_text(_selected_cell),
 		"designation": _designation_debug_text(designation),
 	}
 
