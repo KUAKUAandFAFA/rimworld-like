@@ -1,0 +1,25 @@
+class_name FailureFeedback
+extends RefCounted
+
+const SOURCE_COMMAND := "Command"
+const SOURCE_MOVE_COMMAND := "Move command"
+const SOURCE_HARVEST_COMMAND := "Harvest command"
+const SOURCE_CANCEL_COMMAND := "Cancel command"
+const SOURCE_JOB := "Job"
+const SOURCE_SYSTEM := "System"
+
+const ACTIVE_JOB_CANNOT_CANCEL := "Active job cannot be cancelled"
+const ALREADY_MARKED := "Already marked for harvest"
+const BLOCKED_CELL := "Blocked: selected cell is not walkable"
+const COULD_NOT_MARK_HARVEST := "Could not mark harvest"
+const INVALID_HARVEST := "Invalid harvest result"
+const INVALID_RESOURCE := "Invalid resource data"
+const MISSING_DESIGNATION := "Missing designation"
+const MISSING_HARVEST_JOB_DEF := "Missing harvest job definition"
+const NO_PATH := "No path to target"
+const NO_RESOURCE := "No resource at selected cell"
+const NOTHING_TO_CANCEL := "Nothing to cancel"
+const PAWN_BUSY := "Pawn busy"
+const RESOURCE_GONE := "Resource gone before harvest"
+const UNKNOWN_COMMAND_MODE := "Unknown command mode"
+const UNSUPPORTED_JOB := "Unsupported job type"

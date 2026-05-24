@@ -95,6 +95,7 @@ func _build_lines() -> PackedStringArray:
 	lines.append("Mode: %s" % String(_snapshot.get("command_mode", "Unknown")))
 	lines.append("Status: %s" % String(_snapshot.get("status", "Unknown")))
 	lines.append("Last failure: %s" % String(_snapshot.get("last_failure", "None")))
+	lines.append("Failure source: %s" % String(_snapshot.get("last_failure_source", "None")))
 	lines.append("")
 	_append_selected_cell(lines)
 	_append_designations(lines)

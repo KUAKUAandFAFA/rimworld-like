@@ -22,7 +22,7 @@ func can_run(job: JobInstance) -> bool:
 func start_job(job: JobInstance) -> void:
 	if not can_run(job):
 		active_job = job
-		_fail_active_job("Unsupported job")
+		_fail_active_job(FailureFeedback.UNSUPPORTED_JOB)
 		return
 
 	active_job = job
@@ -31,12 +31,12 @@ func start_job(job: JobInstance) -> void:
 
 	var resource := grid.get_resource_at(active_job.target_cell)
 	if resource.is_empty():
-		_fail_active_job("Resource gone")
+		_fail_active_job(FailureFeedback.RESOURCE_GONE)
 		return
 
 	var item_def := resource.get("item_def") as ItemDef
 	if item_def == null:
-		_fail_active_job("Invalid resource")
+		_fail_active_job(FailureFeedback.INVALID_RESOURCE)
 		return
 
 	active_job.target_item = item_def
@@ -56,13 +56,13 @@ func _on_pawn_arrived(cell: Vector2i) -> void:
 func _collect_resource(_cell: Vector2i) -> void:
 	var harvested := grid.harvest_resource(active_job.target_cell, active_job.amount)
 	if harvested.is_empty():
-		_fail_active_job("Resource gone")
+		_fail_active_job(FailureFeedback.RESOURCE_GONE)
 		return
 
 	var item_def := harvested.get("item_def") as ItemDef
 	var harvested_amount := int(harvested.get("amount", 0))
 	if item_def == null or harvested_amount <= 0:
-		_fail_active_job("Invalid harvest")
+		_fail_active_job(FailureFeedback.INVALID_HARVEST)
 		return
 
 	pawn.set_carrying(item_def, harvested_amount)
@@ -90,7 +90,7 @@ func _deliver_resource() -> void:
 func _move_to_cell(cell: Vector2i, status_text: String) -> void:
 	var path := grid.find_path(pawn.current_cell, cell)
 	if path.is_empty() and pawn.current_cell != cell:
-		_fail_active_job("No path")
+		_fail_active_job(FailureFeedback.NO_PATH)
 		return
 
 	pawn.set_path(path)

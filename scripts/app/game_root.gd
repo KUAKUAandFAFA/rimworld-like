@@ -22,6 +22,7 @@ const HARVEST_JOB_ID := "harvest"
 var _selected_cell := INVALID_CELL
 var _status_text := "Idle"
 var _last_failure_reason := "None"
+var _last_failure_source := "None"
 var _debug_refresh_elapsed := 0.0
 
 
@@ -104,16 +105,16 @@ func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
 		CommandModeModel.MODE_CANCEL:
 			_handle_cancel_command(target_cell)
 		_:
-			_set_failure_status("Unknown command mode")
+			_set_failure_status(FailureFeedback.UNKNOWN_COMMAND_MODE, FailureFeedback.SOURCE_COMMAND)
 
 
 func _handle_move_command(target_cell: Vector2i) -> void:
 	if harvest_job_driver.is_busy():
-		_set_failure_status("Pawn busy")
+		_set_failure_status(FailureFeedback.PAWN_BUSY, FailureFeedback.SOURCE_MOVE_COMMAND)
 		return
 
 	if not grid.is_cell_walkable(target_cell):
-		_set_failure_status("Blocked")
+		_set_failure_status(FailureFeedback.BLOCKED_CELL, FailureFeedback.SOURCE_MOVE_COMMAND)
 		return
 
 	_move_pawn_directly(target_cell)
@@ -121,16 +122,16 @@ func _handle_move_command(target_cell: Vector2i) -> void:
 
 func _handle_harvest_command(target_cell: Vector2i) -> void:
 	if not grid.has_resource(target_cell):
-		_set_failure_status("No resource")
+		_set_failure_status(FailureFeedback.NO_RESOURCE, FailureFeedback.SOURCE_HARVEST_COMMAND)
 		return
 
 	if designation_system.has_designation(target_cell, DesignationSystem.TYPE_HARVEST):
-		_set_failure_status("Already marked")
+		_set_failure_status(FailureFeedback.ALREADY_MARKED, FailureFeedback.SOURCE_HARVEST_COMMAND)
 		return
 
 	var designation := designation_system.add_designation(DesignationSystem.TYPE_HARVEST, target_cell)
 	if designation == null:
-		_set_failure_status("Could not mark harvest")
+		_set_failure_status(FailureFeedback.COULD_NOT_MARK_HARVEST, FailureFeedback.SOURCE_HARVEST_COMMAND)
 		return
 
 	_clear_last_failure()
@@ -144,11 +145,11 @@ func _handle_harvest_command(target_cell: Vector2i) -> void:
 func _handle_cancel_command(target_cell: Vector2i) -> void:
 	var designation := designation_system.get_designation_at(target_cell)
 	if designation == null:
-		_set_failure_status("Nothing to cancel")
+		_set_failure_status(FailureFeedback.NOTHING_TO_CANCEL, FailureFeedback.SOURCE_CANCEL_COMMAND)
 		return
 
 	if job_queue.has_active_job_for_designation(designation):
-		_set_failure_status("Active job cannot be cancelled")
+		_set_failure_status(FailureFeedback.ACTIVE_JOB_CANNOT_CANCEL, FailureFeedback.SOURCE_CANCEL_COMMAND)
 		return
 
 	job_queue.remove_queued_jobs_for_designation(designation)
@@ -160,19 +161,19 @@ func _handle_cancel_command(target_cell: Vector2i) -> void:
 
 func _queue_harvest_job_for_designation(designation: Designation) -> bool:
 	if designation == null:
-		_set_failure_status("Missing designation")
+		_set_failure_status(FailureFeedback.MISSING_DESIGNATION, FailureFeedback.SOURCE_HARVEST_COMMAND)
 		return false
 
 	var resource_cell := designation.target_cell
 	var resource := grid.get_resource_at(resource_cell)
 	if resource.is_empty():
-		_set_failure_status("No resource")
+		_set_failure_status(FailureFeedback.NO_RESOURCE, FailureFeedback.SOURCE_HARVEST_COMMAND)
 		return false
 
 	var item_def := resource.get("item_def") as ItemDef
 	var harvest_job_def := definition_registry.get_job(HARVEST_JOB_ID)
 	if harvest_job_def == null:
-		_set_failure_status("Missing harvest job definition")
+		_set_failure_status(FailureFeedback.MISSING_HARVEST_JOB_DEF, FailureFeedback.SOURCE_SYSTEM)
 		return false
 
 	var resource_amount := maxi(1, int(resource.get("amount", 1)))
@@ -195,13 +196,13 @@ func _start_next_job_if_idle() -> void:
 	if harvest_job_driver.can_run(job):
 		harvest_job_driver.start_job(job)
 	else:
-		job_queue.fail_job(job, "Unsupported job")
+		job_queue.fail_job(job, FailureFeedback.UNSUPPORTED_JOB)
 
 
 func _move_pawn_directly(target_cell: Vector2i) -> void:
 	var path := grid.find_path(pawn.current_cell, target_cell)
 	if path.is_empty() and pawn.current_cell != target_cell:
-		_set_failure_status("No path")
+		_set_failure_status(FailureFeedback.NO_PATH, FailureFeedback.SOURCE_MOVE_COMMAND)
 		return
 
 	pawn.set_path(path)
@@ -222,7 +223,7 @@ func _on_job_completed(job: JobInstance) -> void:
 
 
 func _on_job_failed(_job: JobInstance, reason: String) -> void:
-	_set_failure_status(reason)
+	_set_failure_status(reason, FailureFeedback.SOURCE_JOB)
 	_start_next_job_if_idle()
 
 
@@ -267,13 +268,15 @@ func _set_status(text: String) -> void:
 	_update_debug_inspector()
 
 
-func _set_failure_status(text: String) -> void:
+func _set_failure_status(text: String, source: String = FailureFeedback.SOURCE_SYSTEM) -> void:
 	_last_failure_reason = text
+	_last_failure_source = source
 	_set_status(text)
 
 
 func _clear_last_failure() -> void:
 	_last_failure_reason = "None"
+	_last_failure_source = "None"
 
 
 func _update_hud() -> void:
@@ -291,6 +294,7 @@ func _update_debug_inspector() -> void:
 	debug_inspector.set_snapshot({
 		"status": _status_text,
 		"last_failure": _last_failure_reason,
+		"last_failure_source": _last_failure_source,
 		"command_mode": command_mode_model.get_mode_label(),
 		"selected_cell": _selected_cell_debug_snapshot(),
 		"designations": designation_system.get_debug_snapshot(),
