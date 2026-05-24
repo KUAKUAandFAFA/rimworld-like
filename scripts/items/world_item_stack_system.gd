@@ -44,7 +44,7 @@ func add_or_merge_stack(item_def: ItemDef, amount: int, cell: Vector2i) -> ItemS
 	return stack
 
 
-func get_stack(stack_id: String) -> ItemStack:
+func get_stack_by_id(stack_id: String) -> ItemStack:
 	return _stacks.get(stack_id, null) as ItemStack
 
 
@@ -52,7 +52,7 @@ func get_stacks_at(cell: Vector2i) -> Array[ItemStack]:
 	var stacks: Array[ItemStack] = []
 	var stack_ids: Array = _cell_index.get(cell, [])
 	for raw_stack_id in stack_ids:
-		var stack := get_stack(String(raw_stack_id))
+		var stack := get_stack_by_id(String(raw_stack_id))
 		if stack != null:
 			stacks.append(stack)
 
@@ -60,7 +60,7 @@ func get_stacks_at(cell: Vector2i) -> Array[ItemStack]:
 
 
 func reserve_stack(stack_id: String, owner_id: String) -> bool:
-	var stack := get_stack(stack_id)
+	var stack := get_stack_by_id(stack_id)
 	if stack == null:
 		return false
 
@@ -72,7 +72,7 @@ func reserve_stack(stack_id: String, owner_id: String) -> bool:
 
 
 func clear_stack_reservation(stack_id: String, owner_id: String = "") -> bool:
-	var stack := get_stack(stack_id)
+	var stack := get_stack_by_id(stack_id)
 	if stack == null:
 		return false
 
@@ -175,7 +175,7 @@ func _stack_debug_lines() -> PackedStringArray:
 func _sorted_stacks() -> Array[ItemStack]:
 	var stacks: Array[ItemStack] = []
 	for stack_id in _sorted_stack_ids():
-		var stack := get_stack(stack_id)
+		var stack := get_stack_by_id(stack_id)
 		if stack != null:
 			stacks.append(stack)
 
