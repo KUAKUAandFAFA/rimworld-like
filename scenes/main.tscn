@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b66whayewbqw1"]
+[gd_scene load_steps=10 format=3 uid="uid://b66whayewbqw1"]
 
 [ext_resource type="Script" path="res://scripts/app/game_root.gd" id="1_game_root"]
 [ext_resource type="PackedScene" path="res://scenes/world/world_grid.tscn" id="2_world_grid"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/jobs/harvest_job_driver.gd" id="6_harvest_driver"]
 [ext_resource type="Script" path="res://scripts/app/player_input_controller.gd" id="7_input"]
 [ext_resource type="PackedScene" path="res://scenes/ui/colony_hud.tscn" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/data/definition_registry.gd" id="9_definition_registry"]
 
 [node name="Main" type="Node2D" unique_id=1362121018]
 script = ExtResource("1_game_root")
@@ -15,6 +16,9 @@ script = ExtResource("1_game_root")
 [node name="WorldGrid" parent="." unique_id=468506198 instance=ExtResource("2_world_grid")]
 
 [node name="Pawn" parent="." unique_id=627632176 instance=ExtResource("3_pawn")]
+
+[node name="DefinitionRegistry" type="Node" parent="."]
+script = ExtResource("9_definition_registry")
 
 [node name="JobQueue" type="Node" parent="."]
 script = ExtResource("4_job_queue")

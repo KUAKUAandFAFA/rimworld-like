@@ -2,12 +2,13 @@ class_name GameRoot
 extends Node2D
 
 const INVALID_CELL := Vector2i(-1, -1)
-const HARVEST_JOB_DEF: JobDef = preload("res://resources/jobs/harvest.tres")
+const HARVEST_JOB_ID := "harvest"
 
 @export var camera_speed := 520.0
 
 @onready var grid: WorldGrid = $WorldGrid
 @onready var pawn: Pawn = $Pawn
+@onready var definition_registry: DefinitionRegistry = $DefinitionRegistry
 @onready var job_queue: JobQueue = $JobQueue
 @onready var stockpile: StockpileSystem = $StockpileSystem
 @onready var harvest_job_driver: HarvestJobDriver = $HarvestJobDriver
@@ -21,6 +22,10 @@ var _status_text := "Idle"
 
 func _ready() -> void:
 	camera.make_current()
+	if not definition_registry.is_loaded():
+		definition_registry.load_all()
+	grid.configure_definitions(definition_registry)
+	grid.generate_map()
 	input_controller.configure(grid)
 	harvest_job_driver.configure(grid, pawn, stockpile, job_queue)
 
@@ -50,8 +55,8 @@ func _connect_signals() -> void:
 
 
 func _register_initial_stockpile_items() -> void:
-	stockpile.register_item(grid.food_item_def)
-	stockpile.register_item(grid.wood_item_def)
+	stockpile.register_item(definition_registry.get_item(WorldGrid.RESOURCE_FOOD))
+	stockpile.register_item(definition_registry.get_item(WorldGrid.RESOURCE_WOOD))
 
 
 func _spawn_pawn() -> void:
@@ -85,7 +90,12 @@ func _queue_harvest_job(resource_cell: Vector2i) -> void:
 		return
 
 	var item_def := resource.get("item_def") as ItemDef
-	var job := JobInstance.new(HARVEST_JOB_DEF, resource_cell, item_def, 1)
+	var harvest_job_def := definition_registry.get_job(HARVEST_JOB_ID)
+	if harvest_job_def == null:
+		_set_status("Missing harvest job definition")
+		return
+
+	var job := JobInstance.new(harvest_job_def, resource_cell, item_def, 1)
 	job_queue.add_job(job)
 	_selected_cell = resource_cell
 	queue_redraw()

@@ -25,6 +25,21 @@ func _ready() -> void:
 	generate_map()
 
 
+func configure_definitions(definitions: DefinitionRegistry) -> void:
+	if definitions == null:
+		return
+
+	if not definitions.is_loaded():
+		definitions.load_all()
+
+	soil_terrain = _terrain_or_fallback(definitions, "soil", soil_terrain)
+	grass_terrain = _terrain_or_fallback(definitions, "grass", grass_terrain)
+	stone_terrain = _terrain_or_fallback(definitions, "stone", stone_terrain)
+	water_terrain = _terrain_or_fallback(definitions, "water", water_terrain)
+	food_item_def = _item_or_fallback(definitions, RESOURCE_FOOD, food_item_def)
+	wood_item_def = _item_or_fallback(definitions, RESOURCE_WOOD, wood_item_def)
+
+
 func generate_map() -> void:
 	_terrain.clear()
 	_terrain.resize(map_width * map_height)
@@ -168,6 +183,22 @@ func _get_terrain(cell: Vector2i) -> TerrainDef:
 
 func _to_index(cell: Vector2i) -> int:
 	return cell.y * map_width + cell.x
+
+
+func _terrain_or_fallback(definitions: DefinitionRegistry, id: String, fallback: TerrainDef) -> TerrainDef:
+	var terrain_def := definitions.get_terrain(id)
+	if terrain_def == null:
+		return fallback
+
+	return terrain_def
+
+
+func _item_or_fallback(definitions: DefinitionRegistry, id: String, fallback: ItemDef) -> ItemDef:
+	var item_def := definitions.get_item(id)
+	if item_def == null:
+		return fallback
+
+	return item_def
 
 
 func _draw() -> void:
