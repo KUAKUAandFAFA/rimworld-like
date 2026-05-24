@@ -31,3 +31,36 @@ func item_label() -> String:
 		return "resource"
 
 	return target_item.label().to_lower()
+
+
+static func status_name(status_value: int) -> String:
+	match status_value:
+		Status.QUEUED:
+			return "Queued"
+		Status.CLAIMED:
+			return "Claimed"
+		Status.RUNNING:
+			return "Running"
+		Status.COMPLETED:
+			return "Completed"
+		Status.FAILED:
+			return "Failed"
+		_:
+			return "Unknown"
+
+
+func debug_summary() -> String:
+	var summary := "%s %s at (%d, %d)" % [
+		label(),
+		status_name(status),
+		target_cell.x,
+		target_cell.y,
+	]
+
+	if target_item != null:
+		summary += " for %s" % target_item.label().to_lower()
+
+	if failure_reason != "":
+		summary += " failed: %s" % failure_reason
+
+	return summary

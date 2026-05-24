@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b66whayewbqw1"]
+[gd_scene load_steps=11 format=3 uid="uid://b66whayewbqw1"]
 
 [ext_resource type="Script" path="res://scripts/app/game_root.gd" id="1_game_root"]
 [ext_resource type="PackedScene" path="res://scenes/world/world_grid.tscn" id="2_world_grid"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/app/player_input_controller.gd" id="7_input"]
 [ext_resource type="PackedScene" path="res://scenes/ui/colony_hud.tscn" id="8_hud"]
 [ext_resource type="Script" path="res://scripts/data/definition_registry.gd" id="9_definition_registry"]
+[ext_resource type="Script" path="res://scripts/debug/debug_inspector.gd" id="10_debug_inspector"]
 
 [node name="Main" type="Node2D" unique_id=1362121018]
 script = ExtResource("1_game_root")
@@ -36,3 +37,6 @@ script = ExtResource("7_input")
 position = Vector2(576, 384)
 
 [node name="Hud" parent="." instance=ExtResource("8_hud")]
+
+[node name="DebugInspector" type="CanvasLayer" parent="."]
+script = ExtResource("10_debug_inspector")

@@ -15,9 +15,12 @@ const HARVEST_JOB_ID := "harvest"
 @onready var input_controller: PlayerInputController = $InputController
 @onready var camera: Camera2D = $Camera2D
 @onready var hud: ColonyHud = $Hud
+@onready var debug_inspector: DebugInspector = $DebugInspector
 
 var _selected_cell := INVALID_CELL
 var _status_text := "Idle"
+var _last_failure_reason := "None"
+var _debug_refresh_elapsed := 0.0
 
 
 func _ready() -> void:
@@ -33,6 +36,17 @@ func _ready() -> void:
 	_register_initial_stockpile_items()
 	_spawn_pawn()
 	_update_hud()
+	_update_debug_inspector()
+
+
+func _process(delta: float) -> void:
+	if debug_inspector == null or not debug_inspector.visible:
+		return
+
+	_debug_refresh_elapsed += delta
+	if _debug_refresh_elapsed >= 0.2:
+		_debug_refresh_elapsed = 0.0
+		_update_debug_inspector()
 
 
 func _connect_signals() -> void:
@@ -68,8 +82,10 @@ func _spawn_pawn() -> void:
 
 
 func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
+	_select_cell(target_cell)
+
 	if harvest_job_driver.is_busy():
-		_set_status("Pawn busy")
+		_set_failure_status("Pawn busy")
 		return
 
 	if grid.has_resource(target_cell):
@@ -77,7 +93,7 @@ func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
 		return
 
 	if not grid.is_cell_walkable(target_cell):
-		_set_status("Blocked")
+		_set_failure_status("Blocked")
 		return
 
 	_move_pawn_directly(target_cell)
@@ -86,19 +102,18 @@ func _on_primary_cell_clicked(target_cell: Vector2i) -> void:
 func _queue_harvest_job(resource_cell: Vector2i) -> void:
 	var resource := grid.get_resource_at(resource_cell)
 	if resource.is_empty():
-		_set_status("No resource")
+		_set_failure_status("No resource")
 		return
 
 	var item_def := resource.get("item_def") as ItemDef
 	var harvest_job_def := definition_registry.get_job(HARVEST_JOB_ID)
 	if harvest_job_def == null:
-		_set_status("Missing harvest job definition")
+		_set_failure_status("Missing harvest job definition")
 		return
 
 	var job := JobInstance.new(harvest_job_def, resource_cell, item_def, 1)
 	job_queue.add_job(job)
-	_selected_cell = resource_cell
-	queue_redraw()
+	_clear_last_failure()
 	_start_next_job_if_idle()
 
 
@@ -119,13 +134,12 @@ func _start_next_job_if_idle() -> void:
 func _move_pawn_directly(target_cell: Vector2i) -> void:
 	var path := grid.find_path(pawn.current_cell, target_cell)
 	if path.is_empty() and pawn.current_cell != target_cell:
-		_set_status("No path")
+		_set_failure_status("No path")
 		return
 
-	_selected_cell = target_cell
 	pawn.set_path(path)
+	_clear_last_failure()
 	_set_status("Moving")
-	queue_redraw()
 
 
 func _on_pawn_arrived(_cell: Vector2i) -> void:
@@ -140,7 +154,7 @@ func _on_job_completed(_job: JobInstance) -> void:
 
 
 func _on_job_failed(_job: JobInstance, reason: String) -> void:
-	_set_status(reason)
+	_set_failure_status(reason)
 	_start_next_job_if_idle()
 
 
@@ -160,6 +174,16 @@ func _set_status(text: String) -> void:
 	_status_text = text
 	pawn.status_text = text
 	_update_hud()
+	_update_debug_inspector()
+
+
+func _set_failure_status(text: String) -> void:
+	_last_failure_reason = text
+	_set_status(text)
+
+
+func _clear_last_failure() -> void:
+	_last_failure_reason = "None"
 
 
 func _update_hud() -> void:
@@ -168,6 +192,53 @@ func _update_hud() -> void:
 
 	hud.set_status(_status_text)
 	hud.set_stockpile_snapshot(stockpile.get_snapshot())
+
+
+func _update_debug_inspector() -> void:
+	if debug_inspector == null:
+		return
+
+	debug_inspector.set_snapshot({
+		"status": _status_text,
+		"last_failure": _last_failure_reason,
+		"selected_cell": _selected_cell_debug_snapshot(),
+		"pawn": pawn.get_debug_snapshot(),
+		"jobs": job_queue.get_debug_snapshot(),
+	})
+
+
+func _select_cell(cell: Vector2i) -> void:
+	_selected_cell = cell
+	queue_redraw()
+	_update_debug_inspector()
+
+
+func _selected_cell_debug_snapshot() -> Dictionary:
+	if _selected_cell == INVALID_CELL:
+		return {
+			"has_selection": false,
+		}
+
+	var resource := grid.get_resource_at(_selected_cell)
+	return {
+		"has_selection": true,
+		"cell": _selected_cell,
+		"in_bounds": grid.is_cell_in_bounds(_selected_cell),
+		"walkable": grid.is_cell_walkable(_selected_cell),
+		"resource": _resource_debug_text(resource),
+	}
+
+
+func _resource_debug_text(resource: Dictionary) -> String:
+	if resource.is_empty():
+		return "None"
+
+	var item_def := resource.get("item_def") as ItemDef
+	var amount := int(resource.get("amount", 0))
+	if item_def == null:
+		return "Invalid x%d" % amount
+
+	return "%s x%d" % [item_def.label(), amount]
 
 
 func _find_spawn_cell() -> Vector2i:

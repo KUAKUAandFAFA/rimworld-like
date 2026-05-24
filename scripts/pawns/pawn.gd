@@ -46,6 +46,18 @@ func clear_carrying() -> void:
 	queue_redraw()
 
 
+func get_debug_snapshot() -> Dictionary:
+	return {
+		"cell": current_cell,
+		"status": status_text,
+		"moving": is_moving(),
+		"path_points": _path.size(),
+		"path_index": _path_index,
+		"path_remaining": maxi(_path.size() - _path_index, 0),
+		"carrying": _carrying_debug_text(),
+	}
+
+
 func _process(delta: float) -> void:
 	if _path_index >= _path.size():
 		return
@@ -76,3 +88,10 @@ func _draw() -> void:
 
 func _emit_arrived() -> void:
 	arrived.emit(current_cell)
+
+
+func _carrying_debug_text() -> String:
+	if carrying_item == null or carrying_amount <= 0:
+		return "None"
+
+	return "%s x%d" % [carrying_item.label(), carrying_amount]

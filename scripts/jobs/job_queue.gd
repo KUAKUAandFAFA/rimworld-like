@@ -62,3 +62,21 @@ func get_active_job_for(pawn: Pawn) -> JobInstance:
 			return job
 
 	return null
+
+
+func get_debug_snapshot() -> Dictionary:
+	return {
+		"queued_count": _queued_jobs.size(),
+		"active_count": _active_jobs.size(),
+		"queued_jobs": _job_debug_lines(_queued_jobs),
+		"active_jobs": _job_debug_lines(_active_jobs),
+	}
+
+
+func _job_debug_lines(jobs: Array[JobInstance]) -> PackedStringArray:
+	var lines := PackedStringArray()
+	for job in jobs:
+		if job != null:
+			lines.append(job.debug_summary())
+
+	return lines
