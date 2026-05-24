@@ -38,7 +38,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_panel() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "Panel"
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	panel.anchor_left = 1.0
 	panel.anchor_right = 1.0
 	panel.anchor_top = 0.0
@@ -58,13 +58,24 @@ func _build_panel() -> void:
 	margin.add_theme_constant_override("margin_bottom", 8)
 	panel.add_child(margin)
 
+	var scroll_container := ScrollContainer.new()
+	scroll_container.name = "ScrollContainer"
+	scroll_container.mouse_filter = Control.MOUSE_FILTER_STOP
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll_container)
+
 	_summary_label = Label.new()
 	_summary_label.name = "SummaryLabel"
 	_summary_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_summary_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_summary_label.add_theme_font_size_override("font_size", 12)
 	_summary_label.add_theme_color_override("font_color", Color(0.88, 0.93, 0.90))
-	margin.add_child(_summary_label)
+	scroll_container.add_child(_summary_label)
 
 
 func _panel_style() -> StyleBoxFlat:
