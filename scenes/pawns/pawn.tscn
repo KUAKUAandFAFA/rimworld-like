@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/pawns/pawn.gd" id="1_pawn"]
+
+[node name="Pawn" type="Node2D"]
+script = ExtResource("1_pawn")
