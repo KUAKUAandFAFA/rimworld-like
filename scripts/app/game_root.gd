@@ -128,31 +128,47 @@ func _handle_harvest_command(target_cell: Vector2i) -> void:
 		_set_failure_status("Already marked")
 		return
 
-	designation_system.add_designation(DesignationSystem.TYPE_HARVEST, target_cell)
+	var designation := designation_system.add_designation(DesignationSystem.TYPE_HARVEST, target_cell)
+	if designation == null:
+		_set_failure_status("Could not mark harvest")
+		return
+
 	_clear_last_failure()
 	_set_status("Harvest marked")
+
+	if not _queue_harvest_job_for_designation(designation):
+		designation_system.remove_designation(target_cell)
+		return
 
 
 func _handle_cancel_command(_target_cell: Vector2i) -> void:
 	_set_failure_status("Nothing to cancel")
 
 
-func _queue_harvest_job(resource_cell: Vector2i) -> void:
+func _queue_harvest_job_for_designation(designation: Designation) -> bool:
+	if designation == null:
+		_set_failure_status("Missing designation")
+		return false
+
+	var resource_cell := designation.target_cell
 	var resource := grid.get_resource_at(resource_cell)
 	if resource.is_empty():
 		_set_failure_status("No resource")
-		return
+		return false
 
 	var item_def := resource.get("item_def") as ItemDef
 	var harvest_job_def := definition_registry.get_job(HARVEST_JOB_ID)
 	if harvest_job_def == null:
 		_set_failure_status("Missing harvest job definition")
-		return
+		return false
 
-	var job := JobInstance.new(harvest_job_def, resource_cell, item_def, 1)
+	var resource_amount := maxi(1, int(resource.get("amount", 1)))
+	var job := JobInstance.new(harvest_job_def, resource_cell, item_def, resource_amount)
+	job.source_designation = designation
 	job_queue.add_job(job)
 	_clear_last_failure()
 	_start_next_job_if_idle()
+	return true
 
 
 func _start_next_job_if_idle() -> void:
@@ -187,7 +203,8 @@ func _on_pawn_arrived(_cell: Vector2i) -> void:
 	_start_next_job_if_idle()
 
 
-func _on_job_completed(_job: JobInstance) -> void:
+func _on_job_completed(job: JobInstance) -> void:
+	_clear_completed_job_designation(job)
 	_start_next_job_if_idle()
 
 
@@ -202,6 +219,13 @@ func _on_stockpile_changed(_snapshot: Dictionary) -> void:
 
 func _on_designations_changed() -> void:
 	_update_debug_inspector()
+
+
+func _clear_completed_job_designation(job: JobInstance) -> void:
+	if job == null or job.source_designation == null:
+		return
+
+	designation_system.remove_designation(job.source_designation.target_cell)
 
 
 func _on_camera_pan_requested(direction: Vector2, delta: float) -> void:

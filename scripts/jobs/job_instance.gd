@@ -10,6 +10,7 @@ var amount := 1
 var status := Status.QUEUED
 var assigned_pawn: Pawn
 var failure_reason := ""
+var source_designation: Designation
 
 
 func _init(new_job_def: JobDef = null, new_target_cell: Vector2i = Vector2i.ZERO, new_target_item: ItemDef = null, new_amount: int = 1) -> void:
@@ -62,5 +63,8 @@ func debug_summary() -> String:
 
 	if failure_reason != "":
 		summary += " failed: %s" % failure_reason
+
+	if source_designation != null:
+		summary += " from %s" % source_designation.display_label()
 
 	return summary
