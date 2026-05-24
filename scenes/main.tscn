@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://b66whayewbqw1"]
+[gd_scene load_steps=13 format=3 uid="uid://b66whayewbqw1"]
 
 [ext_resource type="Script" path="res://scripts/app/game_root.gd" id="1_game_root"]
 [ext_resource type="PackedScene" path="res://scenes/world/world_grid.tscn" id="2_world_grid"]
@@ -11,11 +11,15 @@
 [ext_resource type="Script" path="res://scripts/data/definition_registry.gd" id="9_definition_registry"]
 [ext_resource type="Script" path="res://scripts/debug/debug_inspector.gd" id="10_debug_inspector"]
 [ext_resource type="Script" path="res://scripts/app/command_mode_model.gd" id="11_command_mode"]
+[ext_resource type="Script" path="res://scripts/designations/designation_system.gd" id="12_designation_system"]
 
 [node name="Main" type="Node2D" unique_id=1362121018]
 script = ExtResource("1_game_root")
 
 [node name="WorldGrid" parent="." unique_id=468506198 instance=ExtResource("2_world_grid")]
+
+[node name="DesignationSystem" type="Node2D" parent="."]
+script = ExtResource("12_designation_system")
 
 [node name="Pawn" parent="." unique_id=627632176 instance=ExtResource("3_pawn")]
 

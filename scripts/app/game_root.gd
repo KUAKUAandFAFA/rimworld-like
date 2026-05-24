@@ -7,6 +7,7 @@ const HARVEST_JOB_ID := "harvest"
 @export var camera_speed := 520.0
 
 @onready var grid: WorldGrid = $WorldGrid
+@onready var designation_system: DesignationSystem = $DesignationSystem
 @onready var pawn: Pawn = $Pawn
 @onready var definition_registry: DefinitionRegistry = $DefinitionRegistry
 @onready var command_mode_model: CommandModeModel = $CommandModeModel
@@ -30,6 +31,7 @@ func _ready() -> void:
 		definition_registry.load_all()
 	grid.configure_definitions(definition_registry)
 	grid.generate_map()
+	designation_system.configure(grid)
 	input_controller.configure(grid)
 	harvest_job_driver.configure(grid, pawn, stockpile, job_queue)
 
@@ -64,6 +66,8 @@ func _connect_signals() -> void:
 		hud.command_mode_requested.connect(_on_command_mode_requested)
 	if not command_mode_model.mode_changed.is_connected(_on_command_mode_changed):
 		command_mode_model.mode_changed.connect(_on_command_mode_changed)
+	if not designation_system.designations_changed.is_connected(_on_designations_changed):
+		designation_system.designations_changed.connect(_on_designations_changed)
 	if not pawn.arrived.is_connected(_on_pawn_arrived):
 		pawn.arrived.connect(_on_pawn_arrived)
 	if not harvest_job_driver.status_changed.is_connected(_set_status):
@@ -116,15 +120,17 @@ func _handle_move_command(target_cell: Vector2i) -> void:
 
 
 func _handle_harvest_command(target_cell: Vector2i) -> void:
-	if harvest_job_driver.is_busy():
-		_set_failure_status("Pawn busy")
-		return
-
 	if not grid.has_resource(target_cell):
 		_set_failure_status("No resource")
 		return
 
-	_queue_harvest_job(target_cell)
+	if designation_system.has_designation(target_cell, DesignationSystem.TYPE_HARVEST):
+		_set_failure_status("Already marked")
+		return
+
+	designation_system.add_designation(DesignationSystem.TYPE_HARVEST, target_cell)
+	_clear_last_failure()
+	_set_status("Harvest marked")
 
 
 func _handle_cancel_command(_target_cell: Vector2i) -> void:
@@ -194,6 +200,10 @@ func _on_stockpile_changed(_snapshot: Dictionary) -> void:
 	_update_hud()
 
 
+func _on_designations_changed() -> void:
+	_update_debug_inspector()
+
+
 func _on_camera_pan_requested(direction: Vector2, delta: float) -> void:
 	camera.position += direction * camera_speed * delta / camera.zoom.x
 
@@ -246,6 +256,7 @@ func _update_debug_inspector() -> void:
 		"last_failure": _last_failure_reason,
 		"command_mode": command_mode_model.get_mode_label(),
 		"selected_cell": _selected_cell_debug_snapshot(),
+		"designations": designation_system.get_debug_snapshot(),
 		"pawn": pawn.get_debug_snapshot(),
 		"jobs": job_queue.get_debug_snapshot(),
 	})
@@ -264,12 +275,14 @@ func _selected_cell_debug_snapshot() -> Dictionary:
 		}
 
 	var resource := grid.get_resource_at(_selected_cell)
+	var designation := designation_system.get_designation_at(_selected_cell)
 	return {
 		"has_selection": true,
 		"cell": _selected_cell,
 		"in_bounds": grid.is_cell_in_bounds(_selected_cell),
 		"walkable": grid.is_cell_walkable(_selected_cell),
 		"resource": _resource_debug_text(resource),
+		"designation": _designation_debug_text(designation),
 	}
 
 
@@ -283,6 +296,13 @@ func _resource_debug_text(resource: Dictionary) -> String:
 		return "Invalid x%d" % amount
 
 	return "%s x%d" % [item_def.label(), amount]
+
+
+func _designation_debug_text(designation: Designation) -> String:
+	if designation == null:
+		return "None"
+
+	return designation.display_label()
 
 
 func _find_spawn_cell() -> Vector2i:

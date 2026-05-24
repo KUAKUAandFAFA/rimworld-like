@@ -2,7 +2,7 @@ class_name DebugInspector
 extends CanvasLayer
 
 const PANEL_WIDTH := 360.0
-const PANEL_HEIGHT := 300.0
+const PANEL_HEIGHT := 340.0
 const PANEL_MARGIN := 12.0
 
 @export var visible_by_default := true
@@ -97,6 +97,7 @@ func _build_lines() -> PackedStringArray:
 	lines.append("Last failure: %s" % String(_snapshot.get("last_failure", "None")))
 	lines.append("")
 	_append_selected_cell(lines)
+	_append_designations(lines)
 	_append_pawn(lines)
 	_append_jobs(lines)
 	return lines
@@ -115,6 +116,14 @@ func _append_selected_cell(lines: PackedStringArray) -> void:
 		_yes_no(bool(selected.get("walkable", false))),
 	])
 	lines.append("  resource: %s" % String(selected.get("resource", "None")))
+	lines.append("  designation: %s" % String(selected.get("designation", "None")))
+
+
+func _append_designations(lines: PackedStringArray) -> void:
+	var designations: Dictionary = _snapshot.get("designations", {})
+	lines.append("")
+	lines.append("Designations: %d" % int(designations.get("count", 0)))
+	_append_named_lines(lines, "  mark", designations.get("designations", PackedStringArray()))
 
 
 func _append_pawn(lines: PackedStringArray) -> void:
@@ -142,16 +151,16 @@ func _append_jobs(lines: PackedStringArray) -> void:
 		int(jobs.get("queued_count", 0)),
 		int(jobs.get("active_count", 0)),
 	])
-	_append_job_lines(lines, "  current", jobs.get("active_jobs", PackedStringArray()))
-	_append_job_lines(lines, "  pending", jobs.get("queued_jobs", PackedStringArray()))
+	_append_named_lines(lines, "  current", jobs.get("active_jobs", PackedStringArray()))
+	_append_named_lines(lines, "  pending", jobs.get("queued_jobs", PackedStringArray()))
 
 
-func _append_job_lines(lines: PackedStringArray, label: String, job_lines: Variant) -> void:
-	if job_lines.is_empty():
+func _append_named_lines(lines: PackedStringArray, label: String, values: Variant) -> void:
+	if values.is_empty():
 		lines.append("%s: none" % label)
 		return
 
-	for line in job_lines:
+	for line in values:
 		lines.append("%s: %s" % [label, String(line)])
 
 
